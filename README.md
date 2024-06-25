@@ -6,8 +6,19 @@ This repository supports our paper submitted to "fill in":
 
 ## TL;DR
 
-+
-+
-+
+There are 
 
+<img src="misc/the-rainnet2024-family.png" alt="RainNet2024 family models" width="100%"/>
+
+
+## RainNet2024
+
+
+## RainNet2024-S
+
+
+## Data
+
++ YW
++ CatRaRE
 
