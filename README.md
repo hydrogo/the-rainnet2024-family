@@ -16,9 +16,36 @@ There are
 
 ## RainNet2024-S
 
+## Computation environment
+
++ .yml file
 
 ## Data
 
 + YW
 + CatRaRE
+
+## Training
+
+Table with data split: number of events/instances in each fold
+
+preprocessing, loss, optimizer, epochs (20). LR reduction.
+
+Model weights are available on zenodo: "fill in".
+
+## Evaluation
+
++ CSI
++ RainNet2024 vs RainNet2020 reg MSE?
+
+## Sample event
+
++ YW data for a single event
++ fig with predictions
+
+## Operational setting
+
++ copy from KISTERS's script
+
+## Note on overconfidence with jaccard loss  vs. bce
 

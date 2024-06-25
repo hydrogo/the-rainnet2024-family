@@ -1,3 +1,8 @@
+# Repo-specific
+## model weights
+## available at: "link to zenodo"
+## models/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
