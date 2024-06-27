@@ -1,0 +1,20 @@
+name: rainnet2024-env
+channels:
+  - conda-forge
+dependencies:
+  - python=3.9
+  - numpy
+  - scipy
+  - pandas
+  - geopandas
+  - wradlib
+  - pysteps
+  - xarray
+  - keras
+  - tensorflow-cpu
+  - matplotlib
+  - seaborn
+  - jupyter
+  - pip
+  - pip:
+    - segmentation-models
