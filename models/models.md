@@ -1,1 +1,0 @@
-Compiled models in .keras format are available at zenodo.
