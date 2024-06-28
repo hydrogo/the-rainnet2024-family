@@ -72,31 +72,54 @@ rainnet2024 = sm.Unet(backbone_name="efficientnetb4",
 
 ## Data
 
-+ YW
-+ CatRaRE
+We use two sources of data to develop our training, validation, and testing datasets:
+1. [YW](https://opendata.dwd.de/climate_environment/CDC/help/landing_pages/doi_landingpage_RADKLIM_RW_V2017.002-en.html) radar composite developed by the German Weather Service (DWD). It is freely available, quality-controlled, and regularly updated dataset that provides weather radar data with a spatial coverage of 1110x900 km (Germany and some neighboring countries), spatial resolution of 1 km, and temporal resolution of 5 min since 2001. 
+2. [CatRaRE](https://www.dwd.de/EN/ourservices/catrare/catrare.html) (Catalogues of heavy precipitation events) dataset. Also freely available and regularly updated, CatRaRE provides an information about extreme precipitation events and their properties since 2001. The utilization of the CatRaRE dataset helps us to guide the training of the RainNet2024 family of models towards extreme and impact-relevant events.
+
+## Data preprocessing
+
+The CatRaRE dataset provides information about event properties such as time of start and end, spatial location. Using these properties, we use YW radar data to prepare data cubes for each described event that has a duration less than 6 hours (85% of the entire CatraRe dataset. 19613 events in total). 
+
+Each data cube has a spatial extent of 256x256 km, and temporal extent of event's duration (in 5 min time steps) +- 1 hour as a temporal buffer. We saved produced data cubes in `.npy` (numpy binary) format to ease their further use for training, validations, and testing procedures.
+
+|                  | Training  | Validation | Testing   |
+|------------------|-----------|------------|-----------|
+| Period           | 2001-2015 | 2016-2018  | 2019-2020 |
+| Number of events | 13400     | 4103       | 2110      |
+| Percentage       | 68        | 21         | 11        |
+
+We provide a data sample of a single event in `data` folder.
 
 ## Training
 
-Table with data split: number of events/instances in each fold
+loss, optimizer, epochs (20). LR reduction.
 
-preprocessing, loss, optimizer, epochs (20). LR reduction.
-
-Model weights are available on zenodo: "fill in".
 
 ## Evaluation
 
-+ CSI
-+ FSS
+To evaluate model performance on the test period, we use two [community-approved metrics](https://cawcr.gov.au/projects/verification/):
+
+1. Critical Success Index (CSI)
+
+<img src="misc/CSI.png" alt="RainNet2024 family models" width="50%"/>
+
+2. Fractions Skill Score (FSS)
+
+<img src="misc/FSS.png" alt="RainNet2024 family models" width="100%"/>
 
 ## Sample event
 
-+ YW data for a single event
+Here we provide predictions of rainfall accumulation over the next hour calculated by different models for the exemplary event (CatRaRE ID: 20815; time step: 24).
 
 <img src="misc/20815_24.png" alt="RainNet2024 family models" width="100%"/>
 
+The YW data sample for the exemplary event (CatRaRE ID: 20815) is available in `data` folder.
+
++ code will be available soon
+
 ## Operational setting
 
-+ copy from KISTERS's script
++ code will be available soon
 
 <!-- Note on overconfidence with jaccard loss  vs. bce -->
 
