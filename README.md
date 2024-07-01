@@ -92,7 +92,20 @@ We provide a data sample of a single event in `data` folder.
 
 ## Training
 
-loss, optimizer, epochs (20). LR reduction.
+The main difference between the set of RainNet2024 models and RainNet2020 is in training procedure. While RainNet2020 was trained on a wider spatial domain (928x928 km) towards precipitation data of summer months from the period from 2006 to 2013, RaiNet2024 models utilize reduced spatial domain (256x256 km) with the focus on extreme events collected in the CatRaRE dataset. In this way, for the RainNet2024 family, we intentionally put the focus on dynamic events with high precipitation intensities -- ones that were problematic to nowcast for RainNet2020.
+
+For each period (train, validation, or test) and precipitation threshold (5, 10, 15, 20, 25, 30, 40 mm), we evaluated the corresponding CatRaRE events and created an index that collects the event's ID and the specific timestep of the data cube when the hourly rainfall is equal to or exceeds the threshold. For RainNet2024-S training and validation, we used only data relevant to the particular threshold exceedance while for threshold-agnostic RainNet2024, we used the full index as obtained from a threshold exceedance of 5 mm.
+
+We used the mean squared error (MSE) loss for RainNet2024, and the Jaccard loss (also referred as Intersection over Union, IoU) for the set of RainNet2024-S models. We also utilized [Adam](https://arxiv.org/abs/1412.6980) optimizer to perform weights optimization procedure. Training was set for 20 epochs with a simple learning rate reduction policy: if the validation loss did not decrease for two consecutive epochs, we reduced the learning rate by a factor of 0.1.
+
+The pseudo code for training a threshold-specific RainNet2024-S model is shown below:
+
+```python
+import numpy as np
+
+training_index = np.load("path/to/training/index")
+
+```
 
 
 ## Evaluation
