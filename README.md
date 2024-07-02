@@ -8,6 +8,7 @@ The RainNet2024 family's model configurations alongside the pre-trained weights 
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.12547127.svg)](https://doi.org/10.5281/zenodo.12547127)
 
+
 ## TL;DR
 
 We have developed the new set of deep learning models for precipitation nowcasting which continue our work in the field started from the development of the [RainNet](https://github.com/hydrogo/rainnet) (hereafter RainNet2020; [paper](https://gmd.copernicus.org/articles/13/2631/2020/)).
@@ -19,6 +20,7 @@ The RainNet2024 family consists of two types of models:
 <img src="misc/the-rainnet2024-family.png" alt="RainNet2024 family models" width="100%"/>
 
 The source of model configurations -- the [segmentation-models](https://github.com/qubvel/segmentation_models) library developed by [Pavel Iakubovskii](https://github.com/qubvel).
+
 
 ## RainNet2024
 
@@ -70,11 +72,13 @@ rainnet2024 = sm.Unet(backbone_name="efficientnetb4",
 
 `rainnet2024_environment.yml` file provides [conda environment](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) with all the necessary dependencies for working with the RainNet2024 family of models, as well as standard models from the [PySteps](https://github.com/pySTEPS/pysteps) library and radar data processing procedures.
 
+
 ## Data
 
 We use two sources of data to develop our training, validation, and testing datasets:
 1. [YW](https://opendata.dwd.de/climate_environment/CDC/help/landing_pages/doi_landingpage_RADKLIM_RW_V2017.002-en.html) radar composite developed by the German Weather Service (DWD). It is freely available, quality-controlled, and regularly updated dataset that provides weather radar data with a spatial coverage of 1110x900 km (Germany and some neighboring countries), spatial resolution of 1 km, and temporal resolution of 5 min since 2001. 
 2. [CatRaRE](https://www.dwd.de/EN/ourservices/catrare/catrare.html) (Catalogues of heavy precipitation events) dataset. Also freely available and regularly updated, CatRaRE provides an information about extreme precipitation events and their properties since 2001. The utilization of the CatRaRE dataset helps us to guide the training of the RainNet2024 family of models towards extreme and impact-relevant events.
+
 
 ## Data preprocessing
 
@@ -90,6 +94,7 @@ Each data cube has a spatial extent of 256x256 km, and temporal extent of event'
 
 We provide a data sample of a single event in `data` folder.
 
+
 ## Training
 
 The main difference between the set of RainNet2024 models and RainNet2020 is in training procedure. While RainNet2020 was trained on a wider spatial domain (928x928 km) towards precipitation data of summer months from the period from 2006 to 2013, RaiNet2024 models utilize reduced spatial domain (256x256 km) with the focus on extreme events collected in the CatRaRE dataset. In this way, for the RainNet2024 family, we intentionally put the focus on dynamic events with high precipitation intensities -- ones that were problematic to nowcast for RainNet2020.
@@ -102,9 +107,48 @@ The pseudo code for training a threshold-specific RainNet2024-S model is shown b
 
 ```python
 import numpy as np
+import tensorflow as tf
+from tensorflow.keras.utils import Sequence
+import segmentation_models as sm
 
+# loading respective index files, e.g., as following:
+# ["10001_12", "10001_13",...,"20518_35", "20518_36"]
 training_index = np.load("path/to/training/index")
+validation_index = np.load("path/to/validation/index")
 
+# create a Keras Sequence class for training 
+# and validation data delivery
+class DLSequence(Sequence):
+
+    # data IO and preprocessing is here
+    #...
+
+    return batch_x, batch_y 
+
+# set-up the respective sequences
+training_seq = DLSequence(...)
+validation_seq = DLSequence(...)
+
+# model initialization (see the respective 
+# section above for more details)
+model = sm.Unet(...)
+
+# compilation of model
+# provides ready-to-run instance
+# note: loss is "mse" for RainNet2024
+# and "jaccard" (sm.losses.JaccardLoss()) for RainNet2024-S
+model.compile(optimizer="Adam", loss=...)
+
+# setting-up Keras callbacks
+# 1. Reduction of learning rate while on plateau
+reduceLR = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', min_delta=0.0001, mode="min", patience=2, factor=0.1)
+
+# 2. Saving the best model regarding validation loss
+checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath=..., save_weights_only=False, monitor='val_loss', mode='min', save_best_only=True)
+
+# Run training and validation
+model.fit(training_seq, validation_data=validation_seq,
+epochs=20, callbacks=[reduceLR, checkpoint])
 ```
 
 
@@ -114,25 +158,42 @@ To evaluate model performance on the test period, we use two [community-approved
 
 1. Critical Success Index (CSI)
 
-<img src="misc/CSI.png" alt="RainNet2024 family models" width="50%"/>
+<img src="misc/CSI.png" alt="CSI results" width="50%"/>
 
 2. Fractions Skill Score (FSS)
 
-<img src="misc/FSS.png" alt="RainNet2024 family models" width="100%"/>
+<img src="misc/FSS.png" alt="FSS results" width="100%"/>
+
 
 ## Sample event
 
 Here we provide predictions of rainfall accumulation over the next hour calculated by different models for the exemplary event (CatRaRE ID: 20815; time step: 24).
 
-<img src="misc/20815_24.png" alt="RainNet2024 family models" width="100%"/>
+<img src="misc/20815_24.png" alt="Results for the sample event" width="100%"/>
 
 The YW data sample for the exemplary event (CatRaRE ID: 20815) is available in `data` folder.
 
-+ code will be available soon
+The code for model execution and figure plotting is available in `example_sample_event.ipynd` Jupyter Notebook.
+
 
 ## Operational setting
 
-+ code will be available soon
+You can run the family of RainNet2024 models operationally. The respective code is provided in `example_operational.ipynb` Jupyter Notebook (the standard model from the PySteps library is also available).
 
-<!-- Note on overconfidence with jaccard loss  vs. bce -->
 
+## Further notes
+
+### Choice of the loss function: jaccard vs. cross-entropy
+
+For training RainNet2024-S models, we used the Jaccard loss function. The underlying reason for that was a direct optimization towards CSI (Critical Success Index) -- the widely used community-approved metric for evaluation of precipitation nowcasts. However, as was pointed out by [Leinonen et al. (2022; Fig. 5)](https://journals.ametsoc.org/view/journals/aies/1/4/full-AIES-D-22-0043.1-f5.jpg), model which is trained using the CSI (==Jaccard) loss function does not provide calibrated probabilities. That means, that the output of RainNet2024-S models could not be considered as "probabilities" of threshold exceedance. Instead, (binary) cross-entropy loss can be effectively utilized to obtain calibrated probabilities.
+
+While using cross-entropy can be beneficial for particular user groups and decision-makers, the set of benchmark experiments showed the clear advantage of using the Jaccard loss for maximizing the CSI metric on test data.
+
+<img src="misc/jaccard_vs_bce.png" alt="RainNet2024-S family models trained with different loss functions" width="100%"/>
+
+
+## References
+
+```
+Leinonen, J., Hamann, U., & Germann, U. (2022). Seamless lightning nowcasting with recurrent-convolutional deep learning. Artificial Intelligence for the Earth Systems, 1(4), e220043.
+```
